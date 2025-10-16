@@ -8,7 +8,6 @@ import java.util.List;
 import java.awt.geom.AffineTransform;
 
 import car.test.TrafficLightUnit.Direction;
-import static car.test.TrafficLightUnit.Direction.UPRIGHT;
 
 public class MapPanel extends JPanel {
 
@@ -30,7 +29,7 @@ public class MapPanel extends JPanel {
 
     public MapPanel() {
         // โหลดภาพ
-        mapImage = new ImageIcon("assets/Map/map.png").getImage();
+        mapImage = new ImageIcon(MapPanel.class.getResource("map.jpg")).getImage();
         //0
         lights.add(new TrafficLightUnit(350, 2085, Direction.RIGHT, 15, 5, 15, this::repaint));
         lights.add(new TrafficLightUnit(625, 2085, Direction.LEFT, 15, 5, 15, this::repaint));
@@ -277,6 +276,15 @@ public class MapPanel extends JPanel {
                 tl.adjustSeconds(-1);
                 repaint();
                 return;
+            }
+
+        }
+        if (!zoomedIn) {
+            for (WarningSign sign : warningSigns) {
+                if (sign.clickScreen(p, zoom, startX, startY, centerShiftX, centerShiftY)) {
+                    repaint();
+                    return;
+                }
             }
         }
     }
