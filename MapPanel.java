@@ -1,15 +1,13 @@
-package projectjava;
+package car.test;
 
-import car.test.GameTimer;
-import car.test.WarningSign;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.awt.geom.AffineTransform;
+import java.util.List;//------------------------------------------------
+import java.util.ArrayList;//------------------------------------------------
 
-import projectjava.TrafficLightUnit.Direction;
+import car.test.TrafficLightUnit.Direction;
 
 public class MapPanel extends JPanel {
 
@@ -23,7 +21,7 @@ public class MapPanel extends JPanel {
     private boolean zoomedIn = false;//------------------------------------------------
     private int zoomX, zoomY; // พิกัดที่คลิก
     private double zoomScale = 5; // ระดับการซูม       
-    private int zoomSize = 222; // ขนาดพื้นที่ที่ต้องการซูม (px)     
+    private int zoomSize = 222; // ขนาดพื้นที่ที่ต้องการซูม (px)      
 
     private final List<TrafficLightUnit> lights = new ArrayList<>();
     private final int roadWidth = 100;
@@ -33,13 +31,14 @@ public class MapPanel extends JPanel {
 
     public MapPanel() {
         // โหลดภาพ
-        mapImage = new ImageIcon(MapPanel.class.getResource("/projectjava/map.png")).getImage();
-
+        
+        mapImage = new ImageIcon("assets/Map/map.png").getImage();
+        
         lights.add(new TrafficLightUnit(400, 2100, Direction.UP, 6, 2, 6, this::repaint));
         lights.add(new TrafficLightUnit(800, 500, Direction.LEFT, 5, 2, 5, this::repaint));
         lights.add(new TrafficLightUnit(1200, 350, Direction.RIGHT, 7, 2, 7, this::repaint));
         lights.forEach(TrafficLightUnit::start);
-
+        
         SwingUtilities.invokeLater(() -> {
             if (mapImage == null || mapImage.getWidth(null) <= 0) {
                 System.err.println("❌ Map Image loading failed. Please check the path again.");
@@ -64,7 +63,6 @@ public class MapPanel extends JPanel {
             public void mousePressed(MouseEvent e) {
                 lastMouse = e.getPoint();
             }
-
             public void mouseReleased(MouseEvent e) {
                 handleClick(e.getPoint());
             }
@@ -95,6 +93,7 @@ public class MapPanel extends JPanel {
             }
 
             zoom = Math.max(minZoom, Math.min(5.0, zoom));
+
             zoomedIn = zoom > 0.5;//---------------------------------------------
 
             Point p = e.getPoint();
@@ -107,6 +106,9 @@ public class MapPanel extends JPanel {
             clampCamera();
             repaint();
         });
+
+        
+        warnings.add(new WarningSign(600, 100, 100));//------------------------------------------------
 
         gameTimer = new GameTimer(this::repaint);//------------------------------------------------
         gameTimer.start();//------------------------------------------------
@@ -140,19 +142,19 @@ public class MapPanel extends JPanel {
             return;
         }
 
-        Graphics2D g2 = (Graphics2D) g.create();
+        Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                 RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-
+        
         AffineTransform oldTx = g2.getTransform();
         g2.scale(zoom, zoom);
         g2.translate(-cameraX, -cameraY);
         g2.drawImage(mapImage, 0, 0, null);
-
+        
         g2.setTransform(oldTx);
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-
+        
         int startX = (int) Math.round(cameraX);
         int startY = (int) Math.round(cameraY);
         int centerShiftX = 0;
@@ -187,14 +189,14 @@ public class MapPanel extends JPanel {
         int tx = x + (rectWidth - fm.stringWidth(timeText)) / 2;
         int ty = y + ((rectHeight - fm.getHeight()) / 2) + fm.getAscent();
         g2.drawString(timeText, tx, ty);
-
+        
         g2.dispose();
     }
 
     public Dimension getPreferredSize() {
         return new Dimension(1110, 690);
     }
-
+    
     private void handleClick(Point p) {
         int startX = (int) Math.round(cameraX);
         int startY = (int) Math.round(cameraY);
@@ -216,6 +218,5 @@ public class MapPanel extends JPanel {
             }
         }
     }
+    
 }
-//warnings.add(new WarningSign(900, 1100, 150));//------------------------------------------------
-
