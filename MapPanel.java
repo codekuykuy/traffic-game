@@ -3,6 +3,7 @@ package car.test;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.util.List;//------------------------------------------------
 import java.util.ArrayList;//------------------------------------------------
 
@@ -142,18 +143,20 @@ public class MapPanel extends JPanel {
             }
         }
 
-        int rectWidth = 1000;
-        int rectHeight = 250;
-        int arc = 200; // ความโค้ง
-        int margin = 80;
-        int x = getWidth() - rectWidth - margin;
-        int y = 10000;
+        g2.setTransform(new AffineTransform());
+        
+        int rectWidth = 180;
+        int rectHeight = 60;
+        int arc = 30; // ความโค้ง
+        int margin = 20;
+        int x = (getWidth() - rectWidth - margin);
+        int y = margin;
 
         g2.setColor(new Color(0, 0, 0, 150)); // สีดำโปร่งแสง
         g2.fillRoundRect(x, y, rectWidth, rectHeight, arc, arc);
 
         g2.setColor(Color.WHITE);// timer right up
-        g2.setFont(new Font("Arial", Font.BOLD, 150));
+        g2.setFont(new Font("Arial", Font.BOLD, 30));
         String timeText = gameTimer.getTimeString();
         FontMetrics fm = g2.getFontMetrics();
         int tx = x + (rectWidth - fm.stringWidth(timeText)) / 2;
