@@ -1,4 +1,4 @@
-package car.test;
+package project;
 
 import javax.swing.*;
 import java.awt.*;
@@ -6,15 +6,15 @@ import java.awt.event.*;
 
 public class MapPanel extends JPanel {
     private Image mapImage;
-    private double zoom = 1.0;
-    private double minZoom = 1.0;
-    private double cameraX = 0;
-    private double cameraY = 0;
+    private double cameraX = 0, cameraY = 0, minZoom = 1.0, zoom = 1.0;
     private Point lastMouse;
+
 
     public MapPanel() {
         // โหลดภาพ
-        mapImage = new ImageIcon("assets/Map/map.png").getImage();
+        mapImage = new ImageIcon("assets/.map/map.png").getImage();
+        
+
 
         SwingUtilities.invokeLater(() -> {
             if (mapImage == null || mapImage.getWidth(null) <= 0) {
@@ -35,14 +35,13 @@ public class MapPanel extends JPanel {
             repaint();
         });
         
-        // เม้ากลางซูม
+        // คลิกซ้ายค้างแล้วเลื่อน
         addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
                 lastMouse = e.getPoint();
             }
         });
         
-        // คลิกซ้ายค้างแล้วเลื่อน
         addMouseMotionListener(new MouseMotionAdapter() {
             public void mouseDragged(MouseEvent e) {
                 int dx = e.getX() - lastMouse.x;
@@ -54,7 +53,8 @@ public class MapPanel extends JPanel {
                 repaint();
             }
         });
-
+        
+        // เมาส์กลาง
         addMouseWheelListener(e -> {
             double delta = e.getPreciseWheelRotation();
             double zoomFactor = 1.1;
@@ -78,6 +78,9 @@ public class MapPanel extends JPanel {
             clampCamera();
             repaint();
         });
+        
+        
+        
     }
 
     // ล็อกไม่ให้เลื่อนเกิน map
@@ -103,6 +106,8 @@ public class MapPanel extends JPanel {
         g2.scale(zoom, zoom);
         g2.translate(-cameraX, -cameraY);
         g2.drawImage(mapImage, 0, 0, null);
+        
+        
     }
 
     public Dimension getPreferredSize() {
