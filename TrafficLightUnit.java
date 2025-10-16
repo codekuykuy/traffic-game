@@ -6,7 +6,7 @@ import java.awt.geom.*;
 
 public class TrafficLightUnit{
     
-    public enum Direction {UP, LEFT, RIGHT, DOWN}
+    public enum Direction {UP, LEFT, RIGHT, DOWN, UPRIGHT}
     public enum Phase {RED, YELLOW, GREEN}
 
     private int mapX;
@@ -92,7 +92,7 @@ public class TrafficLightUnit{
     public Rectangle getPlusButtonRect(double scale, int startX, int startY, int centerShiftX, int centerShiftY, int roadWidth){
         int sx = centerShiftX + (int) ((mapX - startX) * scale);
         int sy = centerShiftY + (int) ((mapY - startY) * scale);
-        int d = (int) Math.max(6, Math.round(roadWidth * 0.9 * scale));
+        int d = (int) Math.max(6, Math.round(roadWidth * 0.5 * scale));
         int bw = (int) (d * 0.6);
         int bh = (int) (d * 0.6);
         return new Rectangle(sx + d/2 + 6, sy - d/2, bw, bh);
@@ -101,7 +101,7 @@ public class TrafficLightUnit{
     public Rectangle getMinusButtonRect(double scale, int startX, int startY, int centerShiftX, int centerShiftY, int roadWidth){
         int sx = centerShiftX + (int) ((mapX - startX) * scale);
         int sy = centerShiftY + (int) ((mapY - startY) * scale);
-        int d = (int) Math.max(6, Math.round(roadWidth * 0.9 * scale));
+        int d = (int) Math.max(6, Math.round(roadWidth * 0.5 * scale));
         int bw = (int)(d * 0.6);
         int bh = (int)(d * 0.6);
         return new Rectangle(sx + d/2 + 6, sy, bw, bh);
@@ -128,12 +128,13 @@ public class TrafficLightUnit{
             case LEFT  -> -Math.PI / 2;
             case RIGHT ->  Math.PI / 2;
             case DOWN -> Math.PI;
+            case UPRIGHT -> Math.PI / 4;
         };
         at.rotate(angle, sx, sy);
         g2.fill(at.createTransformedShape(arrow));
         
         String txt = String.valueOf(secondsLeft);
-        Font f = g2.getFont().deriveFont((float)Math.max(8, d * 0.45));
+        Font f = g2.getFont().deriveFont((float)Math.max(8, d * 0.30));
         g2.setFont(f);
         FontMetrics fm = g2.getFontMetrics();
         int tx = sx - fm.stringWidth(txt)/2;
