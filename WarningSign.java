@@ -11,14 +11,12 @@ public class WarningSign {
     private boolean active = false;
     private boolean finished = false;
     private boolean stopped = false;
-    private long finishedTime = 0;
 
     private static final int SPAWN_INTERVAL = 2000;
     private static final int FINISHED_DELAY = 1200;
     private static final Random rng = new Random();
 
     private static Timer spawnTimer;
-    private static Timer cleanupTimer;
     private static java.util.List<WarningSign> allSigns = new java.util.ArrayList<>();
 
     public static int score = 0;
@@ -32,11 +30,6 @@ public class WarningSign {
         if (spawnTimer == null) {
             spawnTimer = new Timer(SPAWN_INTERVAL, e -> randomActivate());
             spawnTimer.start();
-        }
-
-        if (cleanupTimer == null) {
-            cleanupTimer = new Timer(200, e -> cleanUp());
-            cleanupTimer.start();
         }
     }
 
@@ -57,18 +50,8 @@ public class WarningSign {
                 s.active = true; // 40% เหลือง
             } else if (roll < 0.9) {
                 s.finished = true; // 30% เขียว
-                s.finishedTime = System.currentTimeMillis();
             } else {
                 s.stopNow(); // 30% แดง
-            }
-        }
-    }
-
-    private static void cleanUp() {
-        long now = System.currentTimeMillis();
-        for (WarningSign s : allSigns) {
-            if (s.finished && now - s.finishedTime >= FINISHED_DELAY) {
-                s.finished = false;
             }
         }
     }
@@ -84,7 +67,6 @@ public class WarningSign {
         if (hit.contains(p) && active) {
             active = false;
             finished = true;
-            finishedTime = System.currentTimeMillis();
         }
     }
 
