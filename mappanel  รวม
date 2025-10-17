@@ -1,0 +1,400 @@
+package car.test;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.util.*;
+import java.util.List;
+
+import car.test.TrafficLightUnit.Direction;
+// ถ้าคลาสเหล่านี้อยู่คนละแพ็กเกจ ให้แก้ import ตามโปรเจ็กต์จริงของคุณ
+import car.test.Car;
+import car.test.Path;
+import car.test.Node;
+
+public class MapPanel extends JPanel {
+
+    // ====== ภาพ/กล้อง/ซูม ======
+    private Image mapImage;
+    private double zoom = 1.0;
+    private double minZoom = 1.0;
+    private double cameraX = 0;
+    private double cameraY = 0;
+    private Point lastMouse;
+
+    private boolean zoomedIn = false;
+
+    // ====== สัญญาณไฟ/เตือน ======
+    private final List<TrafficLightUnit> lights = new ArrayList<>();
+    private final int roadWidth = 120;
+    private final List<WarningSign> warningSigns = new ArrayList<>();
+
+    // ====== HUD/ชั้นเลเยอร์/สถานะเกม ======
+    private GameTimer gameTimer;
+    private EndAndToxicBar hud;
+    private JLayeredPane centerLayer;
+    private boolean gameOver = false;
+    private boolean warned = false;
+
+    // ====== ระบบรถ–เส้นทาง ======
+    private static final Random random = new Random();
+    private final java.util.List<Car> cars = new ArrayList<>();
+    private List<Path> paths = new ArrayList<>();
+    private final Map<Node, List<Path>> nodeToPaths = new HashMap<>();
+    private final List<Path> spawnPaths = new ArrayList<>();
+
+    public MapPanel() {
+        setLayout(new BorderLayout());
+
+        // ====== โหลดรูปแผนที่ ======
+        mapImage = new ImageIcon(MapPanel.class.getResource("/car/Image/map.jpg")).getImage();
+
+        // ====== เลเยอร์กลาง + HUD + ปุ่ม BACK ======
+        centerLayer = new JLayeredPane();
+        centerLayer.setLayout(null);
+        add(centerLayer, BorderLayout.CENTER);
+
+        hud = new EndAndToxicBar();
+        hud.setBounds(16, 16, 220, 150);
+        centerLayer.add(hud, JLayeredPane.DRAG_LAYER);
+
+        JButton backButton = new JButton("BACK");
+        backButton.setFocusPainted(false);
+        backButton.setFont(new Font("Arial", Font.BOLD, 18));
+        backButton.setForeground(Color.WHITE);
+        backButton.setBackground(new Color(49, 33, 90));
+        backButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        backButton.setBounds(940, 600, 120, 50);
+        backButton.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) { backButton.setBackground(new Color(80, 50, 130)); }
+            @Override public void mouseExited (MouseEvent e) { backButton.setBackground(new Color(49, 33, 90)); }
+        });
+        backButton.addActionListener(e -> {
+            JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(MapPanel.this);
+            if (frame != null) frame.dispose();
+            new Menu();
+        });
+        centerLayer.add(backButton, JLayeredPane.PALETTE_LAYER);
+
+        // ====== สัญญาณไฟ (ชุดของคุณ) ======
+        // 0
+        lights.add(new TrafficLightUnit(350, 2085, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(625, 2085, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(495, 2225, Direction.UP, 15, 5, 15, this::repaint));
+        // 1
+        lights.add(new TrafficLightUnit(1750, 2930, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1450, 2930, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1603, 3060, Direction.UP, 15, 5, 15, this::repaint));
+        // 2
+        lights.add(new TrafficLightUnit(4000, 2930, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3700, 2930, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3865, 3060, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3865, 2800, Direction.DOWN, 15, 5, 15, this::repaint));
+        // 3
+        lights.add(new TrafficLightUnit(4000, 2085, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3700, 2085, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3865, 2225, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3865, 1950, Direction.DOWN, 15, 5, 15, this::repaint));
+        // 4
+        lights.add(new TrafficLightUnit(1850, 2035, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1850, 2140, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1300, 2035, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1300, 2140, Direction.DOWN, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1700, 1875, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1825, 1875, Direction.DOWN, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1350, 2250, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1475, 2250, Direction.RIGHT, 15, 5, 15, this::repaint));
+        // 5
+        lights.add(new TrafficLightUnit(495, 2875, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(495, 2975, Direction.DOWN, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1000, 2875, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1000, 2975, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(875, 2700, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(1000, 2700, Direction.DOWN, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(510, 3090, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(640, 3090, Direction.RIGHT, 15, 5, 15, this::repaint));
+        // 6
+        lights.add(new TrafficLightUnit(2350, 2085, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3000, 2085, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(2585, 2300, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(2790, 1885, Direction.DOWN, 15, 5, 15, this::repaint));
+        // 7
+        lights.add(new TrafficLightUnit(2350, 2925, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3000, 2925, Direction.LEFT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(2585, 3140, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(2790, 2725, Direction.DOWN, 15, 5, 15, this::repaint));
+        // 8
+        lights.add(new TrafficLightUnit(3865, 1100, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3700, 825, Direction.RIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3700, 925, Direction.DOWN, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(4000, 975, Direction.LEFT, 15, 5, 15, this::repaint));
+        // 9
+        lights.add(new TrafficLightUnit(2790, 675, Direction.DOWN, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(2590, 1260, Direction.UP, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(2425, 1220, Direction.UPRIGHT, 15, 5, 15, this::repaint));
+        lights.add(new TrafficLightUnit(3000, 780, Direction.LEFT, 15, 5, 15, this::repaint));
+
+        lights.forEach(TrafficLightUnit::start);
+
+        // ====== Warning signs ======
+        warningSigns.add(new WarningSign(490, 2110, 300));
+        warningSigns.add(new WarningSign(1601, 2973, 300));
+        warningSigns.add(new WarningSign(3857, 2930, 300));
+        warningSigns.add(new WarningSign(3857, 2086, 300));
+        warningSigns.add(new WarningSign(1581, 2075, 300));
+        warningSigns.add(new WarningSign(751, 2910, 400));
+        warningSigns.add(new WarningSign(2681, 2089, 400));
+        warningSigns.add(new WarningSign(2681, 2928, 400));
+        warningSigns.add(new WarningSign(3816, 956, 400));
+        warningSigns.add(new WarningSign(2701, 983, 600));
+
+        // ====== เซ็ตซูมเริ่มต้นให้อยู่กลางรูป ======
+        SwingUtilities.invokeLater(() -> {
+            if (mapImage == null || mapImage.getWidth(null) <= 0) {
+                System.err.println("❌ Map Image loading failed. Please check the path again.");
+                return;
+            }
+            int imgW = mapImage.getWidth(null);
+            int imgH = mapImage.getHeight(null);
+
+            double zoomX = (double) getPreferredSize().width / imgW;
+            double zoomY = (double) getPreferredSize().height / imgH;
+            zoom = minZoom = Math.min(zoomX, zoomY);
+
+            cameraX = (imgW - getPreferredSize().width / zoom) / 2.0;
+            cameraY = (imgH - getPreferredSize().height / zoom) / 2.0;
+
+            repaint();
+        });
+
+        // ====== สร้างเส้นทาง + จุด spawn รถ ======
+        try {
+            paths = Path.getDefaultPaths(); // ต้องมีเมธอดนี้ในคลาส Path ของคุณ
+        } catch (Exception ex) {
+            System.err.println("⚠️ Path.getDefaultPaths() error: " + ex.getMessage());
+            paths = new ArrayList<>();
+        }
+
+        // เชื่อมต่อ path ต่อเนื่องแบบ simple (ปลายทางของ p = ต้นทางของ q)
+        for (Path p : paths) {
+            Node end = p.getNode(p.length() - 1);
+            for (Path q : paths) {
+                Node start = q.getNode(0);
+                if (end.equals(start)) {
+                    p.addNextPath(q);
+                }
+            }
+        }
+        // เติมตัวเลือก spawn ตามตัวอย่างของคุณ
+        if (paths.size() > 17) {
+            // Vertical main lanes
+            spawnPaths.add(paths.get(0));  // ขึ้น
+            spawnPaths.add(paths.get(3));  // ขึ้น
+            spawnPaths.add(paths.get(6));  // ลง
+            spawnPaths.add(paths.get(9));  // ลง
+            // Horizontal main lanes
+            spawnPaths.add(paths.get(13)); // ซ้าย->ขวา
+            spawnPaths.add(paths.get(17)); // ขวา->ซ้าย
+        }
+
+        // ====== สร้างรถเป็นพักๆ + อัปเดตรถเรื่อยๆ ======
+        final int carCount = 100;
+        final int spawnInterval = 1000; // ms/คัน
+        new javax.swing.Timer(spawnInterval, new ActionListener() {
+            int spawned = 0;
+            @Override public void actionPerformed(ActionEvent e) {
+                if (spawned >= carCount) {
+                    ((javax.swing.Timer) e.getSource()).stop();
+                    return;
+                }
+                if (!spawnPaths.isEmpty()) {
+                    Path randomPath = spawnPaths.get(random.nextInt(spawnPaths.size()));
+                    Car car = new Car(randomPath, nodeToPaths, spawnPaths);
+                    cars.add(car);
+                    spawned++;
+                }
+            }
+        }).start();
+
+        // อัปเดตการเคลื่อนรถ ~60 FPS
+        new javax.swing.Timer(16, e -> {
+            for (Car c : cars) {
+                c.updatePosition();
+                c.updateFrame();
+            }
+            repaint();
+        }).start();
+
+        // ====== เมาส์/ซูม/แพน ======
+        addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e) { lastMouse = e.getPoint(); }
+            @Override public void mouseReleased(MouseEvent e) { if (!gameOver) handleClick(e.getPoint()); }
+        });
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override public void mouseDragged(MouseEvent e) {
+                int dx = e.getX() - lastMouse.x;
+                int dy = e.getY() - lastMouse.y;
+                cameraX -= dx / zoom;
+                cameraY -= dy / zoom;
+                lastMouse = e.getPoint();
+                clampCamera();
+                repaint();
+            }
+        });
+        addMouseWheelListener(e -> {
+            double delta = e.getPreciseWheelRotation();
+            double zoomFactor = 1.1;
+            double oldZoom = zoom;
+
+            zoom = (delta < 0) ? zoom * zoomFactor : zoom / zoomFactor;
+            zoom = Math.max(minZoom, Math.min(5.0, zoom));
+            zoomedIn = zoom > 0.5;
+
+            Point p = e.getPoint();
+            double px = (p.x / oldZoom) + cameraX;
+            double py = (p.y / oldZoom) + cameraY;
+            cameraX = px - (p.x / zoom);
+            cameraY = py - (p.y / zoom);
+
+            clampCamera();
+            repaint();
+        });
+
+        // ====== Timer เกม: อัปเดต Toxic ตามเวลาถอยหลัง + เตือนหมดเวลา ======
+        gameTimer = new GameTimer(() -> {
+            int remain = gameTimer.getRemainingSeconds();   // ต้องมีใน GameTimer
+            double progress = 1.0 - (remain / 180.0);       // 3 นาที = 180 วินาที
+            if (hud != null) hud.setToxicProgress(progress);
+
+            if (!gameOver) {
+                if (remain == 10 && !warned) warnAlmostTimeUp();
+                if (remain <= 0) handleTimeout();
+            }
+            repaint();
+        });
+        gameTimer.start();
+    }
+
+    // ====== กล้องไม่ให้ออกนอกแผนที่ ======
+    private void clampCamera() {
+        if (mapImage == null) return;
+        double maxX = mapImage.getWidth(null) - getWidth() / zoom;
+        double maxY = mapImage.getHeight(null) - getHeight() / zoom;
+        cameraX = Math.max(0, Math.min(cameraX, maxX));
+        cameraY = Math.max(0, Math.min(cameraY, maxY));
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (mapImage == null) return;
+
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+
+        // ====== วาดแผนที่ + รถ (อยู่ในพิกัดแผนที่) ======
+        AffineTransform oldTx = g2.getTransform();
+        g2.scale(zoom, zoom);
+        g2.translate(-cameraX, -cameraY);
+        g2.drawImage(mapImage, 0, 0, null);
+
+        // รถ — วาดในระบบพิกัดแผนที่
+        for (Car car : cars) {
+            car.draw(g2);
+        }
+        g2.setTransform(oldTx);
+
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int startX = (int) Math.round(cameraX);
+        int startY = (int) Math.round(cameraY);
+
+        // ====== สัญญาณไฟ/ป้ายเตือน (เรนเดอร์ตามโหมดซูม) ======
+        if (zoomedIn) {
+            for (TrafficLightUnit tl : lights) {
+                tl.render(g2, zoom, startX, startY, 0, 0, roadWidth);
+            }
+        } else {
+            for (WarningSign sign : warningSigns) {
+                sign.render(g2, zoom, startX, startY, 0, 0);
+            }
+        }
+
+        // ====== กล่องเวลา (ขวาบน) ======
+        int rectWidth = 180, rectHeight = 60, arc = 30, margin = 20;
+        int x = (getWidth() - rectWidth - margin), y = margin;
+        g2.setColor(new Color(0, 0, 0, 150));
+        g2.fillRoundRect(x, y, rectWidth, rectHeight, arc, arc);
+
+        g2.setColor(Color.WHITE);
+        g2.setFont(new Font("Arial", Font.BOLD, 30));
+        String timeText = (gameTimer != null) ? gameTimer.getTimeString() : "00:00";
+        FontMetrics fm = g2.getFontMetrics();
+        int tx = x + (rectWidth - fm.stringWidth(timeText)) / 2;
+        int ty = y + ((rectHeight - fm.getHeight()) / 2) + fm.getAscent();
+        g2.drawString(timeText, tx, ty);
+
+        g2.dispose();
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        return new Dimension(1110, 690);
+    }
+
+    // ====== คลิกปุ่ม +/- และป้ายเตือน ======
+    private void handleClick(Point p) {
+        if (gameOver) return;
+
+        int startX = (int) Math.round(cameraX);
+        int startY = (int) Math.round(cameraY);
+
+        for (TrafficLightUnit tl : lights) {
+            Rectangle plusR  = tl.getPlusButtonRect(zoom, startX, startY, 0, 0, roadWidth);
+            Rectangle minusR = tl.getMinusButtonRect(zoom, startX, startY, 0, 0, roadWidth);
+
+            if (plusR.contains(p)) { tl.adjustSeconds(+1); repaint(); return; }
+            if (minusR.contains(p)) { tl.adjustSeconds(-1); repaint(); return; }
+        }
+
+        if (!zoomedIn) {
+            for (WarningSign sign : warningSigns) {
+                if (sign.clickScreen(p, zoom, startX, startY, 0, 0)) {
+                    repaint();
+                    return;
+                }
+            }
+        }
+    }
+
+    // ====== เตือน/จบเวลา ======
+    private void warnAlmostTimeUp() {
+        if (warned || gameOver) return;
+        warned = true;
+        Toolkit.getDefaultToolkit().beep();
+        JOptionPane.showMessageDialog(this, "เหลือเวลา 10 วินาที!", "ใกล้หมดเวลา", JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void handleTimeout() {
+        if (gameOver) return;
+        gameOver = true;
+
+        lights.forEach(TrafficLightUnit::stop);
+        if (gameTimer != null) gameTimer.stop();
+        if (hud != null) hud.setToxicProgress(1.0);
+
+        Toolkit.getDefaultToolkit().beep();
+        Toolkit.getDefaultToolkit().beep();
+
+        int score = (hud != null) ? hud.getScorePercentSimple() : 0;
+        JOptionPane.showMessageDialog(
+                this,
+                "หมดเวลา 3 นาที — เกมจบ\nคะแนนของคุณ: " + score + " คะแนน",
+                "Game Over",
+                JOptionPane.ERROR_MESSAGE
+        );
+
+        repaint();
+    }
+}
