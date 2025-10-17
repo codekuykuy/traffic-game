@@ -10,7 +10,7 @@ public class GameTimer {
 
     public GameTimer(Runnable onTick) {
         this.onTick = onTick;
-        this.remainingSeconds = 180;
+        this.remainingSeconds = 2;
 
         timer = new Timer(1000, new ActionListener() {
             @Override
@@ -26,6 +26,8 @@ public class GameTimer {
             }
         });
     }
+    
+    
 
     public void start() {
         if (!timer.isRunning()) timer.start();
@@ -51,4 +53,5 @@ public class GameTimer {
         int seconds = remainingSeconds % 60;
         return String.format("%02d:%02d", minutes, seconds);
     }
+    
 }
