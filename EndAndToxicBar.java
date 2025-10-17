@@ -1,0 +1,88 @@
+package car.test;
+
+import java.awt.*;
+import javax.swing.*;
+
+public class EndAndToxicBar extends JComponent {
+
+    private double pollution = 0.0;     // เริ่มจาก 0%
+    private int stagesDone = 0;
+    private final int totalStages = 8;
+
+    private Timer timer; // Timer สำหรับเพิ่มค่าอัตโนมัติ
+
+    public EndAndToxicBar() {
+        setOpaque(false);
+        setPreferredSize(new Dimension(220, 150));
+
+        addHierarchyBoundsListener(new java.awt.event.HierarchyBoundsAdapter() {
+            @Override
+            public void ancestorResized(java.awt.event.HierarchyEvent e) {
+                updateSizeByParent();
+            }
+        });
+
+        // สร้าง Timer ให้เพิ่มทุก 5 วินาที (5000 ms)
+        timer = new Timer(5000, e -> increaseBar());
+        timer.start();
+    }
+
+    private void updateSizeByParent() {
+        Container parent = getParent();
+        if (parent != null) {
+            int parentW = parent.getWidth();
+            int newW = Math.max(150, (int) (parentW * 0.2));
+            setBounds(16, 16, newW, 120);
+            revalidate();
+            repaint();
+        }
+    }
+
+    // ===== เมธอดควบคุม =====
+    private void increaseBar() {
+        // เพิ่ม pollution
+        pollution = Math.min(1.0, pollution + 0.0278);
+        repaint();
+    }
+
+    public void resetBar() {
+        pollution = 0.0;
+        stagesDone = 0;
+        repaint();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int W = getWidth(), H = getHeight();
+        int margin = 12, barW = W - margin * 2, barH = 24, r = 12;
+
+        // พื้นหลัง
+        g2.setComposite(AlphaComposite.Clear);
+        g2.fillRect(0, 0, W, H);
+        g2.setComposite(AlphaComposite.SrcOver);
+
+        int y1 = 34;
+        g2.setColor(Color.BLACK);
+        g2.setFont(g2.getFont().deriveFont(Font.BOLD, 16f));
+        g2.drawString("Toxic", margin, y1 - 8);
+        g2.setColor(new Color(187, 191, 250));
+        g2.fillRoundRect(margin, y1, barW, barH, r, r);
+        int redW = (int) (barW * pollution);
+        g2.setColor(new Color(230, 0, 0));
+        g2.fillRoundRect(margin + 8, y1 + 5, Math.max(0, redW - 16), barH - 10, r, r);
+
+        int y2 = y1 + 52;
+        g2.setColor(Color.BLACK);
+        g2.drawString("End Game " + stagesDone + "/" + totalStages, margin, y2 - 8);
+        g2.setColor(new Color(187, 191, 250));
+        g2.fillRoundRect(margin, y2, barW, barH, r, r);
+        int greenW = (int) (barW * (stagesDone / (double) totalStages));
+        g2.setColor(new Color(32, 180, 70));
+        g2.fillRoundRect(margin + 8, y2 + 5, Math.max(0, greenW - 16), barH - 10, r, r);
+
+        g2.dispose();
+    }
+}
