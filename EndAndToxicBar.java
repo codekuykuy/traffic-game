@@ -52,11 +52,6 @@ public class EndAndToxicBar extends JComponent {
         repaint();
     }
 
-    public void setToxicProgress(double v) {
-        pollution = Math.max(0.0, Math.min(1.0, v));
-        repaint();
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -64,6 +59,11 @@ public class EndAndToxicBar extends JComponent {
 
         int W = getWidth(), H = getHeight();
         int margin = 12, barW = W - margin * 2, barH = 24, r = 12;
+
+        // พื้นหลัง
+        g2.setComposite(AlphaComposite.Clear);
+        g2.fillRect(0, 0, W, H);
+        g2.setComposite(AlphaComposite.SrcOver);
 
         int y1 = 34;
         g2.setColor(Color.BLACK);
@@ -93,35 +93,5 @@ public class EndAndToxicBar extends JComponent {
         g2.drawString(text, textX, textY);
 
         g2.dispose();
-    }
-
-    public int getStagesDone() {
-        return stagesDone;
-    }
-
-    public int getTotalStages() {
-        return totalStages;
-    }
-
-    public double getPollution() {
-        return pollution;
-    } // 0.0 .. 1.0
-
-// ===== คะแนนตามแถบ End Game ล้วน (0..100) =====
-    public int getScorePercentSimple() {
-        if (totalStages <= 0) {
-            return 0;
-        }
-        return (int) Math.round(100.0 * (stagesDone / (double) totalStages));
-    }
-
-// ===== คะแนนแบบผสม: End Game * (1 - Toxic) (0..100) =====
-    public int getScorePercentWithToxic() {
-        if (totalStages <= 0) {
-            return 0;
-        }
-        double endPart = (stagesDone / (double) totalStages); // ความคืบหน้าตามด่าน
-        double clean = 1.0 - pollution;                       // สะอาดยิ่งได้มาก
-        return (int) Math.round(100.0 * endPart * clean);
     }
 }

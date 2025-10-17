@@ -13,7 +13,7 @@ public class WarningSign {
     private boolean stopped = false;
 
     private static final int SPAWN_INTERVAL = 2000;
-    private static final int FINISHED_DELAY = 1200;
+    
     private static final Random rng = new Random();
 
     private static Timer spawnTimer;
