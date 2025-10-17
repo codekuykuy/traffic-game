@@ -4,20 +4,24 @@ import javax.swing.*;
 import java.awt.event.*;
 
 public class GameTimer {
-    private int elapsedSeconds;
+    private int remainingSeconds;
     private Timer timer;
-    private Runnable onTick; // callback สำหรับ repaint หรืออัพเดท UI
+    private Runnable onTick;
 
     public GameTimer(Runnable onTick) {
         this.onTick = onTick;
-        this.elapsedSeconds = 0;
+        this.remainingSeconds = 180;
 
         timer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                elapsedSeconds++;
-                if (onTick != null) {
-                    onTick.run(); // เรียก repaint()
+                if (remainingSeconds > 0) {
+                    remainingSeconds--;
+                    if (onTick != null) {
+                        onTick.run();
+                    }
+                } else {
+                    stop();
                 }
             }
         });
@@ -32,19 +36,19 @@ public class GameTimer {
     }
 
     public void reset() {
-        elapsedSeconds = 0;
+        remainingSeconds = 180; // รีเซ็ตกลับไป 3 นาที
         if (onTick != null) onTick.run();
     }
 
-    public int getElapsedSeconds() {
-        return elapsedSeconds;
+    // 🔹 getter สำหรับเวลาที่เหลือ
+    public int getRemainingSeconds() {
+        return remainingSeconds;
     }
 
-    // เพิ่ม helper สำหรับรูปแบบ mm:ss
+    // 🔹 getter สำหรับรูปแบบ mm:ss
     public String getTimeString() {
-        int minutes = elapsedSeconds / 60;
-        int seconds = elapsedSeconds % 60;
-        return String.format("Time: %02d:%02d", minutes, seconds);
+        int minutes = remainingSeconds / 60;
+        int seconds = remainingSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
     }
 }
-
