@@ -1,5 +1,6 @@
 package car.test;
 
+import static car.test.WarningSign.score;
 import java.awt.*;
 import javax.swing.*;
 
@@ -7,7 +8,7 @@ public class EndAndToxicBar extends JComponent {
 
     private double pollution = 0.0;     // เริ่มจาก 0%
     private int stagesDone = 0;
-    private final int totalStages = 8;
+    private final int totalStages = score;
 
     private Timer timer; // Timer สำหรับเพิ่มค่าอัตโนมัติ
 
@@ -67,7 +68,7 @@ public class EndAndToxicBar extends JComponent {
         int y1 = 34;
         g2.setColor(Color.BLACK);
         g2.setFont(g2.getFont().deriveFont(Font.BOLD, 16f));
-        g2.drawString("Toxic", margin, y1 - 8);
+        g2.drawString("Life", margin, y1 - 8);
         g2.setColor(new Color(187, 191, 250));
         g2.fillRoundRect(margin, y1, barW, barH, r, r);
         int redW = (int) (barW * pollution);
@@ -75,13 +76,21 @@ public class EndAndToxicBar extends JComponent {
         g2.fillRoundRect(margin + 8, y1 + 5, Math.max(0, redW - 16), barH - 10, r, r);
 
         int y2 = y1 + 52;
-        g2.setColor(Color.BLACK);
-        g2.drawString("End Game " + stagesDone + "/" + totalStages, margin, y2 - 8);
         g2.setColor(new Color(187, 191, 250));
         g2.fillRoundRect(margin, y2, barW, barH, r, r);
-        int greenW = (int) (barW * (stagesDone / (double) totalStages));
-        g2.setColor(new Color(32, 180, 70));
-        g2.fillRoundRect(margin + 8, y2 + 5, Math.max(0, greenW - 16), barH - 10, r, r);
+
+// ข้อความอยู่ "ในกรอบ"
+        g2.setColor(Color.BLACK);
+        FontMetrics fm = g2.getFontMetrics();
+        String text = "Score = " + WarningSign.score;
+        int textWidth = fm.stringWidth(text);
+        int textHeight = fm.getAscent();
+
+// จัดให้อยู่กึ่งกลางกรอบแนวนอนและแนวตั้ง
+        int textX = margin + (barW - textWidth) / 2;
+        int textY = y2 + (barH + textHeight) / 2 - 3;
+
+        g2.drawString(text, textX, textY);
 
         g2.dispose();
     }
